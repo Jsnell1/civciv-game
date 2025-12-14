@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Civciv – iOS Safe</title>
+<style>
+html, body {
+  margin:0; padding:0; overflow:hidden;
+  background:#cceeff;
+  touch-action:none;
+}
+canvas { display:block; }
+#ui {
+  position:fixed; top:10px; left:10px;
+  background:rgba(255,255,255,0.9);
+  padding:8px 12px;
+  border-radius:12px;
+  font-family: system-ui, sans-serif;
+  font-weight:600;
+}
+#rps {
+  position:fixed; inset:0;
+  display:none;
+  background:rgba(0,0,0,0.65);
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  color:#fff;
+  font-size:22px;
+}
+#rps button {
+  font-size:22px;
+  margin:8px;
+  padding:10px 24px;
+  border-radius:14px;
+  border:none;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div id="ui">🪙 <span id="coins">0</span></div>
+
+<div id="rps">
+  <div>Seç!</div>
+  <button onclick="pick('rock')">🪨 Taş</button>
+  <button onclick="pick('paper')">📄 Kağıt</button>
+  <button onclick="pick('scissors')">✂️ Makas</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let player={x:120,y:canvas.height/2,r:20};
+let enemy={x:canvas.width-120,y:canvas.height/2,r:20};
+let coin={x:canvas.width/2,y:canvas.height/2,r:10};
+let target=null;
+let coins=0;
+let fighting=false;
+
+function setTarget(x,y){
+  target={x,y};
+}
+
+canvas.addEventListener("touchstart", e=>{
+  const t=e.touches[0];
+  setTarget(t.clientX, t.clientY);
+}, {passive:false});
+
+canvas.addEventListener("mousedown", e=>{
+  setTarget(e.clientX, e.clientY);
+});
+
+function move(o,s){
+  if(!target) return;
+  const dx=target.x-o.x;
+  const dy=target.y-o.y;
+  const d=Math.hypot(dx,dy);
+  if(d>2){
+    o.x+=dx/d*s;
+    o.y+=dy/d*s;
+  }
+}
+
+function chick(x,y){
+  ctx.fillStyle="#ffeb3b";
+  ctx.beginPath();
+  ctx.arc(x,y,20,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#000";
+  ctx.beginPath(); ctx.arc(x-6,y-4,2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+6,y-4,2,0,Math.PI*2); ctx.fill();
+}
+
+function collide(a,b){
+  return Math.hypot(a.x-b.x,a.y-b.y) < a.r+b.r;
+}
+
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  move(player,3);
+  chick(player.x,player.y);
+  chick(enemy.x,enemy.y);
+
+  ctx.fillStyle="gold";
+  ctx.beginPath();
+  ctx.arc(coin.x,coin.y,10,0,Math.PI*2);
+  ctx.fill();
+
+  if(collide(player,coin)){
+    coins++;
+    document.getElementById("coins").innerText=coins;
+    coin.x=Math.random()*canvas.width;
+    coin.y=Math.random()*canvas.height;
+  }
+
+  if(collide(player,enemy) && !fighting){
+    fighting=true;
+    document.getElementById("rps").style.display="flex";
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function pick(p){
+  const c=["rock","paper","scissors"];
+  const e=c[Math.floor(Math.random()*3)];
+  const win=(p==="rock"&&e==="scissors")||(p==="paper"&&e==="rock")||(p==="scissors"&&e==="paper");
+  if(win){
+    coins+=2;
+    document.getElementById("coins").innerText=coins;
+  }
+  enemy.x=Math.random()*canvas.width;
+  enemy.y=Math.random()*canvas.height;
+  fighting=false;
+  document.getElementById("rps").style.display="none";
+}
+
+loop();
+</script>
+</body>
+</html>
